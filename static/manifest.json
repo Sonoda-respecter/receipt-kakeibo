@@ -1,0 +1,21 @@
+{
+  "name": "レシート家計簿",
+  "short_name": "家計簿",
+  "description": "レシートを撮影して家計簿をつけるアプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

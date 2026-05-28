@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>レシート家計簿</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="家計簿">
+<link rel="apple-touch-icon" href="/static/icon-192.png">
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <header>
+    <h1>📋 レシート家計簿</h1>
+    <nav>
+      <button class="tab-btn active" data-tab="scan">スキャン</button>
+      <button class="tab-btn" data-tab="history">履歴</button>
+      <button class="tab-btn" data-tab="summary">集計</button>
+    </nav>
+  </header>
+
+  <!-- Scan Tab -->
+  <div id="tab-scan" class="tab-content active">
+    <div class="card upload-area" id="drop-zone">
+      <div id="upload-prompt">
+        <div class="upload-icon">📷</div>
+        <p>レシートの写真をドラッグ＆ドロップ<br>またはタップして選択</p>
+        <input type="file" id="file-input" accept="image/*" capture="environment">
+        <button class="btn-primary" onclick="document.getElementById('file-input').click()">
+          写真を選択
+        </button>
+      </div>
+      <div id="preview-container" style="display:none">
+        <img id="preview-img" alt="レシートプレビュー">
+        <button class="btn-secondary" id="btn-reselect">別の写真を選択</button>
+        <button class="btn-primary" id="btn-analyze">
+          <span class="spinner" style="display:none"></span>
+          AI解析する
+        </button>
+      </div>
+    </div>
+
+    <!-- Analysis Result Form -->
+    <div id="result-form" class="card" style="display:none">
+      <h2>解析結果の確認</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>日付</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="form-group">
+          <label>店舗名</label>
+          <input type="text" id="f-store" placeholder="例：イオン">
+        </div>
+        <div class="form-group">
+          <label>カテゴリ</label>
+          <select id="f-category">
+            {% for cat in categories %}
+            <option value="{{ cat }}">{{ cat }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>合計金額（円）</label>
+          <input type="number" id="f-total" min="0">
+        </div>
+        <div class="form-group full-width">
+          <label>メモ</label>
+          <input type="text" id="f-memo" placeholder="任意">
+        </div>
+      </div>
+
+      <div class="items-section">
+        <h3>品目一覧</h3>
+        <div id="items-list"></div>
+        <button class="btn-ghost" id="btn-add-item">+ 品目を追加</button>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-secondary" id="btn-cancel">キャンセル</button>
+        <button class="btn-primary" id="btn-save">保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Tab -->
+  <div id="tab-history" class="tab-content">
+    <div class="toolbar">
+      <select id="history-month-sel"></select>
+      <span id="history-total-label"></span>
+    </div>
+    <div id="expenses-list"></div>
+  </div>
+
+  <!-- Summary Tab -->
+  <div id="tab-summary" class="tab-content">
+    <div class="toolbar">
+      <select id="summary-month-sel"></select>
+    </div>
+    <div class="card summary-total">
+      <span>今月の支出合計</span>
+      <strong id="summary-total-amount">¥0</strong>
+    </div>
+    <div id="chart-container" class="card">
+      <h2>カテゴリ別支出</h2>
+      <div id="category-bars"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
