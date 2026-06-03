@@ -14,6 +14,13 @@
 </head>
 <body>
 <div id="app">
+  <!-- API Key Warning Banner -->
+  <div id="api-warning" style="display:none;background:#fef3c7;border-bottom:2px solid #f59e0b;padding:12px 20px;font-size:.88rem;color:#92400e;">
+    ⚠️ <strong>Gemini APIキーが未設定です。</strong>
+    <a href="https://aistudio.google.com/" target="_blank" style="color:#b45309;font-weight:600;">Google AI Studio</a>
+    で無料取得後、<code>.env</code> に <code>GEMINI_API_KEY=...</code> を設定してサーバーを再起動してください。
+  </div>
+
   <!-- Header -->
   <header>
     <h1>📋 レシート家計簿</h1>

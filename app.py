@@ -1,15 +1,14 @@
 import os
 import json
 import re
-import io
 import sqlite3
 from datetime import datetime, date
 from pathlib import Path
 
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
-import google.generativeai as genai
-import PIL.Image
+from google import genai
+from google.genai import types
 
 load_dotenv()
 
@@ -17,8 +16,11 @@ app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16MB
 
 # ── AI ──────────────────────────────────────────────────────────────────────
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
-ai_model = genai.GenerativeModel("gemini-1.5-flash")
+_raw_key = os.environ.get("GEMINI_API_KEY", "").strip()
+_PLACEHOLDERS = {"", "your_gemini_api_key_here", "ここにgemini_apiキーを貼り付け"}
+GEMINI_API_KEY = "" if _raw_key.lower() in _PLACEHOLDERS else _raw_key
+ai_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
+GEMINI_MODEL = "gemini-2.5-flash"
 
 # ── DB ──────────────────────────────────────────────────────────────────────
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
@@ -99,6 +101,11 @@ def init_db():
 
 # ── Routes ──────────────────────────────────────────────────────────────────
 
+@app.route("/api/status")
+def status():
+    return jsonify({"api_key_set": bool(GEMINI_API_KEY)})
+
+
 @app.route("/")
 def index():
     return render_template("index.html", categories=CATEGORIES)
@@ -114,7 +121,7 @@ def analyze():
         return jsonify({"error": "ファイルが選択されていません"}), 400
 
     image_data = file.read()
-    img = PIL.Image.open(io.BytesIO(image_data))
+    mime_type = file.content_type or "image/jpeg"
 
     prompt = """このレシート画像から以下の情報をJSON形式で抽出してください。
 日本語のレシートの場合はそのまま日本語で返してください。
@@ -136,8 +143,17 @@ def analyze():
 - 日付がレシートにない場合は今日の日付を使う
 - JSONのみを返し、説明文は不要"""
 
+    if not ai_client:
+        return jsonify({"error": "Gemini APIキーが未設定です。.envファイルに GEMINI_API_KEY を追加してください。\nGoogle AI Studio（https://aistudio.google.com/）で無料取得できます。"}), 503
+
     try:
-        response = ai_model.generate_content([prompt, img])
+        response = ai_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[
+                types.Part.from_bytes(data=image_data, mime_type=mime_type),
+                prompt,
+            ],
+        )
         raw = response.text.strip()
         match = re.search(r"\{[\s\S]*\}", raw)
         if match:
@@ -147,9 +163,12 @@ def analyze():
             result["date"] = date.today().isoformat()
         return jsonify(result)
     except json.JSONDecodeError:
-        return jsonify({"error": "レシートの解析に失敗しました。別の画像をお試しください。"}), 422
+        return jsonify({"error": "レシートの解析に失敗しました。画像が不鮮明な可能性があります。"}), 422
     except Exception as e:
-        return jsonify({"error": f"エラーが発生しました: {str(e)}"}), 500
+        err = str(e)
+        if any(k in err for k in ["API_KEY", "api_key", "401", "403", "authentication", "UNAUTHENTICATED"]):
+            return jsonify({"error": "Gemini APIキーが無効か期限切れです。Google AI Studio で新しいキーを取得してください。"}), 401
+        return jsonify({"error": f"解析エラー: {err}"}), 500
 
 
 @app.route("/api/expenses", methods=["POST"])

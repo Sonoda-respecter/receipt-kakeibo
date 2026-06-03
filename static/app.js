@@ -9,7 +9,18 @@ document.addEventListener("DOMContentLoaded", () => {
   initAnalyzeBtn();
   initFormActions();
   loadMonthSelectors();
+  checkApiStatus();
 });
+
+async function checkApiStatus() {
+  try {
+    const res = await fetch("/api/status");
+    const data = await res.json();
+    if (!data.api_key_set) {
+      document.getElementById("api-warning").style.display = "block";
+    }
+  } catch (_) {}
+}
 
 /* ===== Tabs ===== */
 function initTabs() {
